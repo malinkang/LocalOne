@@ -1,5 +1,13 @@
 <resources>
     <color name="dayone_blue">#44C0FF</color>
+    <color name="dayone_teal">#55C7D9</color>
     <color name="dayone_pink">#FF6E6B</color>
     <color name="dayone_gray">#7A7A7A</color>
+
+    <!-- Aztec Toolbar 样式配色 -->
+    <color name="editor_toolbar_bg_color">#1C1C1E</color>
+    <color name="editor_toolbar_border_color">#2C2C2E</color>
+    <color name="editor_toolbar_icon_color">#E5E5EA</color>
+    <color name="editor_toolbar_icon_highlighted_color">#55C7D9</color>
+    <color name="editor_toolbar_icon_disabled">#48484A</color>
 </resources>

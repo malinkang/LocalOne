@@ -9,11 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -32,12 +30,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.localone.journal.ui.editor.components.AztecRichEditor
-import com.localone.journal.ui.editor.components.EditorFormatBar
 import com.localone.journal.ui.editor.components.EditorMetadataHeader
 import com.localone.journal.ui.editor.components.EditorTopBar
 import com.localone.journal.ui.theme.DayOneLightGray
 import org.wordpress.aztec.AztecText
-import org.wordpress.aztec.AztecTextFormat
 
 @Composable
 fun EditorScreen(
@@ -84,37 +80,6 @@ fun EditorScreen(
                 onToggleStar = { viewModel.toggleStar() },
                 onDeleteClick = { viewModel.deleteEntry() }
             )
-        },
-        bottomBar = {
-            EditorFormatBar(
-                modifier = Modifier.imePadding(),
-                onAddPhotoClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                onBoldClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_BOLD)
-                },
-                onItalicClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_ITALIC)
-                },
-                onUnderlineClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_UNDERLINE)
-                },
-                onHeadingClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_HEADING_1)
-                },
-                onTaskListClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_TASK_LIST)
-                },
-                onQuoteClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_QUOTE)
-                },
-                onListClick = {
-                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_UNORDERED_LIST)
-                }
-            )
         }
     ) { paddingValues ->
         Column(
@@ -122,8 +87,9 @@ fun EditorScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
+                .imePadding()
         ) {
+            // 元数据信息栏（时间、地点、天气）
             EditorMetadataHeader(
                 creationTime = uiState.creationTime,
                 location = uiState.location,
@@ -131,24 +97,24 @@ fun EditorScreen(
             )
 
             HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
             )
 
-            // 照片多媒体排版
+            // 照片多媒体排版区
             if (uiState.photos.isNotEmpty()) {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(uiState.photos) { photoUri ->
                         Box(
                             modifier = Modifier
-                                .size(width = 150.dp, height = 110.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .size(width = 140.dp, height = 100.dp)
+                                .clip(RoundedCornerShape(14.dp))
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
@@ -184,7 +150,7 @@ fun EditorScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
                 if (uiState.title.isEmpty()) {
                     Text(
@@ -208,23 +174,26 @@ fun EditorScreen(
                 )
             }
 
-            // Aztec 原生富文本所见即所得编辑器区
+            // Aztec 原生富文本编辑器与原装工具栏（1:1 对标 Day One）
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .defaultMinSize(minHeight = 400.dp)
-                    .padding(horizontal = 16.dp)
+                    .weight(1f)
             ) {
                 AztecRichEditor(
                     initialHtml = uiState.contentHtml,
                     onContentChanged = { html ->
                         viewModel.onContentHtmlChanged(html)
                     },
+                    onAddPhotoClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
                     onEditorReady = { editor ->
                         aztecTextRef = editor
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

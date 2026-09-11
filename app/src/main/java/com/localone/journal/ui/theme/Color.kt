@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 // Day One Signature Palette & Design Tokens
 val DayOneBlue = Color(0xFF44C0FF)
 val DayOneBlueDark = Color(0xFF009EEA)
+val DayOneTeal = Color(0xFF55C7D9)
 val DayOnePink = Color(0xFFFF6E6B)
 val DayOneLightGray = Color(0xFF7A7A7A)
 

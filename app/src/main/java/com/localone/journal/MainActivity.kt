@@ -18,7 +18,9 @@ import com.localone.journal.ui.theme.LocalOneTheme
 import com.localone.journal.ui.timeline.TimelineScreen
 import com.localone.journal.ui.timeline.TimelineViewModel
 
-class MainActivity : ComponentActivity() {
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

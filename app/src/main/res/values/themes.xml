@@ -1,0 +1,15 @@
+<resources>
+    <style name="Theme.LocalOne" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/dayone_teal</item>
+        <item name="colorSecondary">@color/dayone_blue</item>
+    </style>
+
+    <style name="AztecToolbarStyle">
+        <item name="mediaToolbarAvailable">false</item>
+        <item name="toolbarBackgroundColor">@color/editor_toolbar_bg_color</item>
+        <item name="toolbarBorderColor">@color/editor_toolbar_border_color</item>
+        <item name="toolbarIconDisabledColor">@color/editor_toolbar_icon_disabled</item>
+        <item name="toolbarIconHighlightColor">@color/editor_toolbar_icon_highlighted_color</item>
+        <item name="toolbarIconNormalColor">@color/editor_toolbar_icon_color</item>
+    </style>
+</resources>
