@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.localone.journal.domain.model.JournalEntry
 import com.localone.journal.ui.theme.*
+import com.mikepenz.markdown.m3.Markdown
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -30,6 +31,7 @@ import java.util.Locale
 fun TimelineScreen(
     viewModel: TimelineViewModel,
     onNavigateToEditor: (Long?) -> Unit = {},
+    onNavigateToCalendar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,7 +57,7 @@ fun TimelineScreen(
                     IconButton(onClick = { viewModel.createSampleEntry() }) {
                         Icon(Icons.Default.AddCircleOutline, contentDescription = "快速生成示例")
                     }
-                    IconButton(onClick = { /* TODO: 打开日历 */ }) {
+                    IconButton(onClick = onNavigateToCalendar) {
                         Icon(Icons.Default.CalendarToday, contentDescription = "日历视图")
                     }
                 },
@@ -228,15 +230,17 @@ fun DayOneJournalCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // 正文摘要
-            Text(
-                text = entry.previewSnippet.ifBlank { entry.content },
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                lineHeight = 20.sp,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+            // 正文 Markdown 渲染
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 110.dp)
+            ) {
+                Markdown(
+                    content = entry.content.take(300),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 

@@ -32,8 +32,10 @@ fun EditorTopBar(
     isStarred: Boolean,
     isExistingEntry: Boolean,
     isSaving: Boolean,
+    isPreviewMode: Boolean = false,
     onBackClick: () -> Unit,
     onToggleStar: () -> Unit,
+    onTogglePreview: () -> Unit = {},
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -77,6 +79,15 @@ fun EditorTopBar(
             }
         },
         actions = {
+            // 预览 / 编辑 切换
+            IconButton(onClick = onTogglePreview) {
+                Icon(
+                    imageVector = if (isPreviewMode) Icons.Default.Edit else Icons.Default.Visibility,
+                    contentDescription = if (isPreviewMode) "切回编辑" else "渲染预览",
+                    tint = if (isPreviewMode) DayOneBlue else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             IconButton(onClick = onToggleStar) {
                 Icon(
                     imageVector = if (isStarred) Icons.Filled.Star else Icons.Outlined.StarBorder,

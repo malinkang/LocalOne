@@ -10,6 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.localone.journal.ui.calendar.CalendarScreen
+import com.localone.journal.ui.calendar.CalendarViewModel
 import com.localone.journal.ui.editor.EditorScreen
 import com.localone.journal.ui.editor.EditorViewModel
 import com.localone.journal.ui.theme.LocalOneTheme
@@ -39,6 +41,29 @@ class MainActivity : ComponentActivity() {
 
                         TimelineScreen(
                             viewModel = timelineViewModel,
+                            onNavigateToEditor = { entryId ->
+                                if (entryId != null && entryId > 0) {
+                                    navController.navigate("editor?entryId=$entryId")
+                                } else {
+                                    navController.navigate("editor")
+                                }
+                            },
+                            onNavigateToCalendar = {
+                                navController.navigate("calendar")
+                            }
+                        )
+                    }
+
+                    composable("calendar") {
+                        val calendarViewModel: CalendarViewModel = viewModel {
+                            CalendarViewModel(repository)
+                        }
+
+                        CalendarScreen(
+                            viewModel = calendarViewModel,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            },
                             onNavigateToEditor = { entryId ->
                                 if (entryId != null && entryId > 0) {
                                     navController.navigate("editor?entryId=$entryId")

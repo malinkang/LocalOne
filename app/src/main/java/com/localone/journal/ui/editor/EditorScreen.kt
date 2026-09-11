@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.mikepenz.markdown.m3.Markdown
 import com.localone.journal.ui.editor.components.EditorFormatBar
 import com.localone.journal.ui.editor.components.EditorMetadataHeader
 import com.localone.journal.ui.editor.components.EditorTopBar
@@ -44,6 +45,9 @@ fun EditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // 预览/编辑模式切换，已有日记默认可一键预览渲染结果
+    var isPreviewMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -66,30 +70,34 @@ fun EditorScreen(
                 isStarred = uiState.isStarred,
                 isExistingEntry = uiState.entryId != null && uiState.entryId!! > 0,
                 isSaving = uiState.isSaving,
+                isPreviewMode = isPreviewMode,
                 onBackClick = {
                     viewModel.saveEntry()
                 },
                 onToggleStar = { viewModel.toggleStar() },
+                onTogglePreview = { isPreviewMode = !isPreviewMode },
                 onSaveClick = { viewModel.saveEntry() },
                 onDeleteClick = { viewModel.deleteEntry() }
             )
         },
         bottomBar = {
-            EditorFormatBar(
-                modifier = Modifier.imePadding(),
-                onAddPhotoClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                onBoldClick = { viewModel.applyWrapFormatting("**", "**") },
-                onItalicClick = { viewModel.applyWrapFormatting("*", "*") },
-                onHeadingClick = { viewModel.applyLinePrefixFormatting("# ") },
-                onTaskListClick = { viewModel.applyLinePrefixFormatting("- [ ] ") },
-                onQuoteClick = { viewModel.applyLinePrefixFormatting("> ") },
-                onListClick = { viewModel.applyLinePrefixFormatting("- ") },
-                onCodeClick = { viewModel.applyWrapFormatting("```\n", "\n```") }
-            )
+            if (!isPreviewMode) {
+                EditorFormatBar(
+                    modifier = Modifier.imePadding(),
+                    onAddPhotoClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onBoldClick = { viewModel.applyWrapFormatting("**", "**") },
+                    onItalicClick = { viewModel.applyWrapFormatting("*", "*") },
+                    onHeadingClick = { viewModel.applyLinePrefixFormatting("# ") },
+                    onTaskListClick = { viewModel.applyLinePrefixFormatting("- [ ] ") },
+                    onQuoteClick = { viewModel.applyLinePrefixFormatting("> ") },
+                    onListClick = { viewModel.applyLinePrefixFormatting("- ") },
+                    onCodeClick = { viewModel.applyWrapFormatting("```\n", "\n```") }
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -133,80 +141,118 @@ fun EditorScreen(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            Surface(
-                                shape = CircleShape,
-                                color = Color.Black.copy(alpha = 0.6f),
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(4.dp)
-                                    .size(22.dp)
-                                    .clickable { viewModel.removePhoto(photoUri) }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "删除",
-                                    tint = Color.White,
-                                    modifier = Modifier.padding(4.dp)
-                                )
+                            if (!isPreviewMode) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = Color.Black.copy(alpha = 0.6f),
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(22.dp)
+                                        .clickable { viewModel.removePhoto(photoUri) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "删除",
+                                        tint = Color.White,
+                                        modifier = Modifier.padding(4.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                if (uiState.title.isEmpty()) {
+            // 标题
+            if (isPreviewMode) {
+                if (uiState.title.isNotBlank()) {
                     Text(
-                        text = "标题（可选）",
-                        fontSize = 22.sp,
+                        text = uiState.title,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = DayOneLightGray
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
                 }
-                BasicTextField(
-                    value = uiState.title,
-                    onValueChange = { viewModel.onTitleChange(it) },
-                    textStyle = TextStyle(
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    if (uiState.title.isEmpty()) {
+                        Text(
+                            text = "标题（可选）",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DayOneLightGray
+                        )
+                    }
+                    BasicTextField(
+                        value = uiState.title,
+                        onValueChange = { viewModel.onTitleChange(it) },
+                        textStyle = TextStyle(
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .defaultMinSize(minHeight = 350.dp)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                if (uiState.bodyValue.text.isEmpty()) {
+            // 正文区（支持编辑态与富文本渲染态）
+            if (isPreviewMode) {
+                if (uiState.bodyValue.text.isBlank()) {
                     Text(
-                        text = "书写你的今天...",
-                        fontSize = 16.sp,
-                        lineHeight = 24.sp,
-                        color = DayOneLightGray
+                        text = "（日记内容为空）",
+                        fontSize = 15.sp,
+                        color = DayOneLightGray,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Markdown(
+                            content = uiState.bodyValue.text,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .defaultMinSize(minHeight = 350.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    if (uiState.bodyValue.text.isEmpty()) {
+                        Text(
+                            text = "书写你的今天...",
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = DayOneLightGray
+                        )
+                    }
+                    BasicTextField(
+                        value = uiState.bodyValue,
+                        onValueChange = { viewModel.onBodyChange(it) },
+                        textStyle = TextStyle(
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                BasicTextField(
-                    value = uiState.bodyValue,
-                    onValueChange = { viewModel.onBodyChange(it) },
-                    textStyle = TextStyle(
-                        fontSize = 16.sp,
-                        lineHeight = 24.sp,
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
     }
