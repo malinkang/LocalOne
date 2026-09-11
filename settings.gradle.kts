@@ -17,6 +17,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = java.net.URI("https://jitpack.io") }
+        maven { url = java.net.URI("https://a8c-libs.s3.amazonaws.com/android") }
     }
 }
 

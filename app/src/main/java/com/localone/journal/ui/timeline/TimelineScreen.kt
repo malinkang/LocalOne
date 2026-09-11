@@ -230,16 +230,28 @@ fun DayOneJournalCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
 
-            // 正文 Markdown 渲染
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 110.dp)
-            ) {
-                Markdown(
-                    content = entry.content.take(300),
+            // 正文富文本 / Markdown 渲染
+            if (com.localone.journal.ui.common.RichTextConverter.isHtml(entry.content)) {
+                Text(
+                    text = com.localone.journal.ui.common.RichTextConverter.htmlToAnnotatedString(entry.content),
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 15.sp,
+                    lineHeight = 22.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
                     modifier = Modifier.fillMaxWidth()
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 110.dp)
+                ) {
+                    Markdown(
+                        content = entry.content.take(300),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

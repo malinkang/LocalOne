@@ -1,6 +1,5 @@
 package com.localone.journal.ui.editor
 
-import androidx.compose.ui.text.input.TextFieldValue
 import com.localone.journal.domain.model.EntryLocation
 import com.localone.journal.domain.model.EntryWeather
 import java.time.Instant
@@ -8,7 +7,7 @@ import java.time.Instant
 data class EditorUiState(
     val entryId: Long? = null,
     val title: String = "",
-    val bodyValue: TextFieldValue = TextFieldValue(""),
+    val contentHtml: String = "",
     val isStarred: Boolean = false,
     val creationTime: Instant = Instant.now(),
     val timeZone: String = java.time.ZoneId.systemDefault().id,

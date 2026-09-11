@@ -1,7 +1,5 @@
 package com.localone.journal.ui.editor
 
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.localone.journal.domain.model.EntryLocation
@@ -58,7 +56,7 @@ class EditorViewModel(
                     it.copy(
                         entryId = entry.id,
                         title = entry.title ?: "",
-                        bodyValue = TextFieldValue(text = entry.content, selection = TextRange(entry.content.length)),
+                        contentHtml = entry.content,
                         isStarred = entry.isStarred,
                         creationTime = entry.creationTime,
                         photos = entry.photoUris,
@@ -78,8 +76,8 @@ class EditorViewModel(
         _uiState.update { it.copy(title = newTitle) }
     }
 
-    fun onBodyChange(newValue: TextFieldValue) {
-        _uiState.update { it.copy(bodyValue = newValue) }
+    fun onContentHtmlChanged(newHtml: String) {
+        _uiState.update { it.copy(contentHtml = newHtml) }
     }
 
     fun toggleStar() {
@@ -94,69 +92,26 @@ class EditorViewModel(
         _uiState.update { it.copy(photos = it.photos - photoUri) }
     }
 
-    fun applyWrapFormatting(prefix: String, suffix: String) {
-        val current = _uiState.value.bodyValue
-        val text = current.text
-        val selection = current.selection
-
-        val newText: String
-        val newSelection: TextRange
-
-        if (selection.collapsed) {
-            val cursor = selection.start
-            val before = text.substring(0, cursor)
-            val after = text.substring(cursor)
-            newText = "$before$prefix$suffix$after"
-            val newCursorPos = cursor + prefix.length
-            newSelection = TextRange(newCursorPos)
-        } else {
-            val start = selection.min
-            val end = selection.max
-            val before = text.substring(0, start)
-            val selectedText = text.substring(start, end)
-            val after = text.substring(end)
-            newText = "$before$prefix$selectedText$suffix$after"
-            newSelection = TextRange(start + prefix.length, end + prefix.length)
-        }
-
-        _uiState.update { it.copy(bodyValue = TextFieldValue(newText, newSelection)) }
-    }
-
-    fun applyLinePrefixFormatting(prefix: String) {
-        val current = _uiState.value.bodyValue
-        val text = current.text
-        val selection = current.selection
-        val cursor = selection.start
-
-        val lastNewline = text.lastIndexOf('\n', (cursor - 1).coerceAtLeast(0))
-        val lineStart = if (lastNewline == -1) 0 else lastNewline + 1
-
-        val before = text.substring(0, lineStart)
-        val after = text.substring(lineStart)
-        val newText = "$before$prefix$after"
-        val newCursor = cursor + prefix.length
-
-        _uiState.update { it.copy(bodyValue = TextFieldValue(newText, TextRange(newCursor))) }
-    }
-
-    fun saveEntry() {
+    fun saveEntry(currentHtml: String? = null) {
         val state = _uiState.value
         val title = state.title.trim()
-        val body = state.bodyValue.text.trim()
+        val content = (currentHtml ?: state.contentHtml).trim()
 
-        if (title.isEmpty() && body.isEmpty() && state.photos.isEmpty()) {
+        if (title.isEmpty() && content.isEmpty() && state.photos.isEmpty()) {
             _uiState.update { it.copy(isSaved = true) }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
+            // 剥离 HTML 标签生成纯文本摘要
+            val plainText = android.text.Html.fromHtml(content, android.text.Html.FROM_HTML_MODE_LEGACY).toString().trim()
             val entryToSave = JournalEntry(
                 id = state.entryId ?: 0L,
                 bookId = state.bookId,
                 title = title.ifEmpty { null },
-                content = body,
-                previewSnippet = body.take(120).replace("\n", " "),
+                content = content,
+                previewSnippet = plainText.take(150).replace("\n", " "),
                 creationTime = state.creationTime,
                 modifiedTime = Instant.now(),
                 isStarred = state.isStarred,

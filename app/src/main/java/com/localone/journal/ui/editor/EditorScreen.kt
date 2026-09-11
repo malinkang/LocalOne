@@ -31,11 +31,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.mikepenz.markdown.m3.Markdown
+import com.localone.journal.ui.editor.components.AztecRichEditor
 import com.localone.journal.ui.editor.components.EditorFormatBar
 import com.localone.journal.ui.editor.components.EditorMetadataHeader
 import com.localone.journal.ui.editor.components.EditorTopBar
 import com.localone.journal.ui.theme.DayOneLightGray
+import org.wordpress.aztec.AztecText
+import org.wordpress.aztec.AztecTextFormat
 
 @Composable
 fun EditorScreen(
@@ -46,8 +48,7 @@ fun EditorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // 预览/编辑模式切换，已有日记默认可一键预览渲染结果
-    var isPreviewMode by remember { mutableStateOf(false) }
+    var aztecTextRef by remember { mutableStateOf<AztecText?>(null) }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -70,34 +71,50 @@ fun EditorScreen(
                 isStarred = uiState.isStarred,
                 isExistingEntry = uiState.entryId != null && uiState.entryId!! > 0,
                 isSaving = uiState.isSaving,
-                isPreviewMode = isPreviewMode,
-                onBackClick = {
-                    viewModel.saveEntry()
+                onSaveClick = {
+                    val html = aztecTextRef?.toHtml(false)
+                    viewModel.saveEntry(html)
+                },
+                onUndoClick = {
+                    aztecTextRef?.undo()
+                },
+                onRedoClick = {
+                    aztecTextRef?.redo()
                 },
                 onToggleStar = { viewModel.toggleStar() },
-                onTogglePreview = { isPreviewMode = !isPreviewMode },
-                onSaveClick = { viewModel.saveEntry() },
                 onDeleteClick = { viewModel.deleteEntry() }
             )
         },
         bottomBar = {
-            if (!isPreviewMode) {
-                EditorFormatBar(
-                    modifier = Modifier.imePadding(),
-                    onAddPhotoClick = {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    onBoldClick = { viewModel.applyWrapFormatting("**", "**") },
-                    onItalicClick = { viewModel.applyWrapFormatting("*", "*") },
-                    onHeadingClick = { viewModel.applyLinePrefixFormatting("# ") },
-                    onTaskListClick = { viewModel.applyLinePrefixFormatting("- [ ] ") },
-                    onQuoteClick = { viewModel.applyLinePrefixFormatting("> ") },
-                    onListClick = { viewModel.applyLinePrefixFormatting("- ") },
-                    onCodeClick = { viewModel.applyWrapFormatting("```\n", "\n```") }
-                )
-            }
+            EditorFormatBar(
+                modifier = Modifier.imePadding(),
+                onAddPhotoClick = {
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                onBoldClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_BOLD)
+                },
+                onItalicClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_ITALIC)
+                },
+                onUnderlineClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_UNDERLINE)
+                },
+                onHeadingClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_HEADING_1)
+                },
+                onTaskListClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_TASK_LIST)
+                },
+                onQuoteClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_QUOTE)
+                },
+                onListClick = {
+                    aztecTextRef?.toggleFormatting(AztecTextFormat.FORMAT_UNORDERED_LIST)
+                }
+            )
         }
     ) { paddingValues ->
         Column(
@@ -119,18 +136,19 @@ fun EditorScreen(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
 
+            // 照片多媒体排版
             if (uiState.photos.isNotEmpty()) {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(uiState.photos) { photoUri ->
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(12.dp))
+                                .size(width = 150.dp, height = 110.dp)
+                                .clip(RoundedCornerShape(16.dp))
                         ) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
@@ -141,118 +159,73 @@ fun EditorScreen(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                            if (!isPreviewMode) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color.Black.copy(alpha = 0.6f),
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(4.dp)
-                                        .size(22.dp)
-                                        .clickable { viewModel.removePhoto(photoUri) }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "删除",
-                                        tint = Color.White,
-                                        modifier = Modifier.padding(4.dp)
-                                    )
-                                }
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.Black.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(6.dp)
+                                    .size(24.dp)
+                                    .clickable { viewModel.removePhoto(photoUri) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "删除",
+                                    tint = Color.White,
+                                    modifier = Modifier.padding(4.dp)
+                                )
                             }
                         }
                     }
                 }
             }
 
-            // 标题
-            if (isPreviewMode) {
-                if (uiState.title.isNotBlank()) {
+            // 大标题输入区
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                if (uiState.title.isEmpty()) {
                     Text(
-                        text = uiState.title,
-                        fontSize = 24.sp,
+                        text = "标题（可选）",
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        color = DayOneLightGray
                     )
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    if (uiState.title.isEmpty()) {
-                        Text(
-                            text = "标题（可选）",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DayOneLightGray
-                        )
-                    }
-                    BasicTextField(
-                        value = uiState.title,
-                        onValueChange = { viewModel.onTitleChange(it) },
-                        textStyle = TextStyle(
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                BasicTextField(
+                    value = uiState.title,
+                    onValueChange = { viewModel.onTitleChange(it) },
+                    textStyle = TextStyle(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            // 正文区（支持编辑态与富文本渲染态）
-            if (isPreviewMode) {
-                if (uiState.bodyValue.text.isBlank()) {
-                    Text(
-                        text = "（日记内容为空）",
-                        fontSize = 15.sp,
-                        color = DayOneLightGray,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Markdown(
-                            content = uiState.bodyValue.text,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .defaultMinSize(minHeight = 350.dp)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    if (uiState.bodyValue.text.isEmpty()) {
-                        Text(
-                            text = "书写你的今天...",
-                            fontSize = 16.sp,
-                            lineHeight = 24.sp,
-                            color = DayOneLightGray
-                        )
-                    }
-                    BasicTextField(
-                        value = uiState.bodyValue,
-                        onValueChange = { viewModel.onBodyChange(it) },
-                        textStyle = TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 24.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            // Aztec 原生富文本所见即所得编辑器区
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .defaultMinSize(minHeight = 400.dp)
+                    .padding(horizontal = 16.dp)
+            ) {
+                AztecRichEditor(
+                    initialHtml = uiState.contentHtml,
+                    onContentChanged = { html ->
+                        viewModel.onContentHtmlChanged(html)
+                    },
+                    onEditorReady = { editor ->
+                        aztecTextRef = editor
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

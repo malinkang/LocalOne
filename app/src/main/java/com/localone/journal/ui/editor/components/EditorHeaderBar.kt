@@ -1,10 +1,13 @@
 package com.localone.journal.ui.editor.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
@@ -32,11 +35,10 @@ fun EditorTopBar(
     isStarred: Boolean,
     isExistingEntry: Boolean,
     isSaving: Boolean,
-    isPreviewMode: Boolean = false,
-    onBackClick: () -> Unit,
-    onToggleStar: () -> Unit,
-    onTogglePreview: () -> Unit = {},
     onSaveClick: () -> Unit,
+    onUndoClick: () -> Unit,
+    onRedoClick: () -> Unit,
+    onToggleStar: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -71,49 +73,58 @@ fun EditorTopBar(
             }
         },
         navigationIcon = {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回"
-                )
+            // Day One 标志性的青蓝色圆角打勾保存退出按钮
+            Box(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(DayOneBlue)
+                    .clickable(enabled = !isSaving) { onSaveClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "完成并保存",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         },
         actions = {
-            // 预览 / 编辑 切换
-            IconButton(onClick = onTogglePreview) {
+            // 撤销 Undo
+            IconButton(onClick = onUndoClick) {
                 Icon(
-                    imageVector = if (isPreviewMode) Icons.Default.Edit else Icons.Default.Visibility,
-                    contentDescription = if (isPreviewMode) "切回编辑" else "渲染预览",
-                    tint = if (isPreviewMode) DayOneBlue else MaterialTheme.colorScheme.onSurfaceVariant
+                    imageVector = Icons.AutoMirrored.Filled.Undo,
+                    contentDescription = "撤销",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
+            // 重做 Redo
+            IconButton(onClick = onRedoClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Redo,
+                    contentDescription = "重做",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 收藏星标
             IconButton(onClick = onToggleStar) {
                 Icon(
                     imageVector = if (isStarred) Icons.Filled.Star else Icons.Outlined.StarBorder,
                     contentDescription = "收藏",
                     tint = if (isStarred) DayOnePink else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-
-            TextButton(
-                onClick = onSaveClick,
-                enabled = !isSaving
-            ) {
-                if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = DayOneBlue
-                    )
-                } else {
-                    Text(
-                        text = "完成",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = DayOneBlue
-                    )
-                }
             }
 
             if (isExistingEntry) {

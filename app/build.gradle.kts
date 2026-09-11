@@ -65,6 +65,8 @@ dependencies {
     implementation(libs.markdown.renderer.m3)
     implementation(libs.calendar.compose)
     implementation(libs.kotlinx.coroutines.android)
+    implementation("org.wordpress:aztec:v1.6.2")
+    implementation("androidx.appcompat:appcompat:1.7.0")
 
     debugImplementation(libs.androidx.ui.tooling)
 }

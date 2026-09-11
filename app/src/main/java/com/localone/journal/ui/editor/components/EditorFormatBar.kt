@@ -1,17 +1,15 @@
 package com.localone.journal.ui.editor.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
-import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.FormatUnderlined
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.localone.journal.R
@@ -22,11 +20,11 @@ fun EditorFormatBar(
     onAddPhotoClick: () -> Unit,
     onBoldClick: () -> Unit,
     onItalicClick: () -> Unit,
+    onUnderlineClick: () -> Unit,
     onHeadingClick: () -> Unit,
     onTaskListClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onListClick: () -> Unit,
-    onCodeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -60,7 +58,17 @@ fun EditorFormatBar(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            // 粗体
+            // 标题 TT
+            IconButton(onClick = onHeadingClick) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_format_heading),
+                    contentDescription = "大标题",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // 粗体 B
             IconButton(onClick = onBoldClick) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_format_bold),
@@ -70,7 +78,7 @@ fun EditorFormatBar(
                 )
             }
 
-            // 斜体
+            // 斜体 I
             IconButton(onClick = onItalicClick) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_format_italic),
@@ -80,11 +88,11 @@ fun EditorFormatBar(
                 )
             }
 
-            // 标题
-            IconButton(onClick = onHeadingClick) {
+            // 下划线 U
+            IconButton(onClick = onUnderlineClick) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_format_heading),
-                    contentDescription = "大标题",
+                    imageVector = Icons.Default.FormatUnderlined,
+                    contentDescription = "下划线",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp)
                 )
@@ -115,16 +123,6 @@ fun EditorFormatBar(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_format_list),
                     contentDescription = "无序列表",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // 代码块
-            IconButton(onClick = onCodeClick) {
-                Icon(
-                    imageVector = Icons.Default.Code,
-                    contentDescription = "代码块",
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(20.dp)
                 )
