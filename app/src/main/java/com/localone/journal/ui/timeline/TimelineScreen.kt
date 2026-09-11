@@ -134,7 +134,7 @@ fun TimelineScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            Icons.Default.MenuBook,
+                            Icons.Default.Book,
                             contentDescription = null,
                             tint = DayOneLightGray,
                             modifier = Modifier.size(64.dp)
