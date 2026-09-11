@@ -1,7 +1,10 @@
 package com.localone.journal.ui.editor
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.localone.journal.data.sensor.LocationHelper
+import com.localone.journal.data.sensor.WeatherHelper
 import com.localone.journal.domain.model.EntryLocation
 import com.localone.journal.domain.model.EntryWeather
 import com.localone.journal.domain.model.JournalEntry
@@ -31,16 +34,16 @@ class EditorViewModel(
                 it.copy(
                     creationTime = Instant.now(),
                     location = EntryLocation(
-                        latitude = 39.9042,
-                        longitude = 116.4074,
+                        latitude = 40.0970,
+                        longitude = 116.2942,
                         placeName = "当前位置",
                         localityName = "北京市",
                         country = "中国"
                     ),
                     weather = EntryWeather(
-                        temperatureCelsius = 23.5,
-                        weatherCode = "800",
-                        conditionsDescription = "晴朗",
+                        temperatureCelsius = 20.0,
+                        weatherCode = "0",
+                        conditionsDescription = "晴朗 ☀",
                         moonPhase = 0.45
                     )
                 )
@@ -69,6 +72,41 @@ class EditorViewModel(
             } else {
                 _uiState.update { it.copy(isLoading = false) }
             }
+        }
+    }
+
+    fun refreshLocationAndWeather(context: Context) {
+        viewModelScope.launch {
+            val loc = LocationHelper.getCurrentLocation(context)
+            if (loc != null) {
+                _uiState.update { it.copy(location = loc) }
+                val weather = WeatherHelper.fetchWeather(loc.latitude, loc.longitude)
+                if (weather != null) {
+                    _uiState.update { it.copy(weather = weather) }
+                }
+            }
+        }
+    }
+
+    fun updateLocation(location: EntryLocation?) {
+        _uiState.update { it.copy(location = location) }
+    }
+
+    fun updateLocationPlaceName(placeName: String) {
+        val current = _uiState.value.location ?: EntryLocation(latitude = 40.097, longitude = 116.294)
+        _uiState.update {
+            it.copy(location = current.copy(placeName = placeName))
+        }
+    }
+
+    fun updateWeather(weather: EntryWeather?) {
+        _uiState.update { it.copy(weather = weather) }
+    }
+
+    fun updateWeatherDetails(temp: Double, desc: String) {
+        val current = _uiState.value.weather ?: EntryWeather(temperatureCelsius = temp, conditionsDescription = desc, weatherCode = "0")
+        _uiState.update {
+            it.copy(weather = current.copy(temperatureCelsius = temp, conditionsDescription = desc))
         }
     }
 
@@ -104,23 +142,24 @@ class EditorViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            // 剥离 HTML 标签生成纯文本摘要
-            val plainText = android.text.Html.fromHtml(content, android.text.Html.FROM_HTML_MODE_LEGACY).toString().trim()
-            val entryToSave = JournalEntry(
-                id = state.entryId ?: 0L,
-                bookId = state.bookId,
-                title = title.ifEmpty { null },
+
+            val entry = JournalEntry(
+                id = state.entryId ?: 0,
+                title = title.ifBlank { null },
                 content = content,
-                previewSnippet = plainText.take(150).replace("\n", " "),
+                previewSnippet = content.take(150),
+                photoUris = state.photos,
                 creationTime = state.creationTime,
                 modifiedTime = Instant.now(),
-                isStarred = state.isStarred,
-                photoUris = state.photos,
                 location = state.location,
-                weather = state.weather
+                weather = state.weather,
+                bookId = state.bookId,
+                isStarred = state.isStarred
             )
-            val id = repository.insertOrUpdateEntry(entryToSave)
-            _uiState.update { it.copy(entryId = id, isSaving = false, isSaved = true) }
+
+            repository.insertOrUpdateEntry(entry)
+
+            _uiState.update { it.copy(isSaving = false, isSaved = true) }
         }
     }
 

@@ -32,6 +32,8 @@ import coil.request.ImageRequest
 import com.localone.journal.ui.editor.components.AztecRichEditor
 import com.localone.journal.ui.editor.components.EditorMetadataHeader
 import com.localone.journal.ui.editor.components.EditorTopBar
+import com.localone.journal.ui.editor.components.LocationBottomSheet
+import com.localone.journal.ui.editor.components.WeatherBottomSheet
 import com.localone.journal.ui.theme.DayOneLightGray
 import org.wordpress.aztec.AztecText
 
@@ -45,6 +47,15 @@ fun EditorScreen(
     val context = LocalContext.current
 
     var aztecTextRef by remember { mutableStateOf<AztecText?>(null) }
+    var showLocationSheet by remember { mutableStateOf(false) }
+    var showWeatherSheet by remember { mutableStateOf(false) }
+
+    // 自动尝试获取真实物理位置和实时天气
+    LaunchedEffect(Unit) {
+        if (uiState.entryId == null || uiState.entryId!! <= 0) {
+            viewModel.refreshLocationAndWeather(context)
+        }
+    }
 
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
@@ -57,6 +68,19 @@ fun EditorScreen(
     ) { uri: Uri? ->
         uri?.let {
             viewModel.addPhoto(it.toString())
+        }
+    }
+
+    // 在 Aztec 当前光标处插入内容
+    val insertContentAtCursor = { textToInsert: String ->
+        aztecTextRef?.let { aztec ->
+            val start = aztec.selectionStart.coerceAtLeast(0)
+            val end = aztec.selectionEnd.coerceAtLeast(start)
+            val prefix = if (start > 0 && aztec.text?.getOrNull(start - 1) != '\n') "\n" else ""
+            val formatted = "$prefix$textToInsert\n"
+            aztec.editableText.replace(start, end, formatted)
+            aztec.setSelection((start + formatted.length).coerceAtMost(aztec.text?.length ?: 0))
+            viewModel.onContentHtmlChanged(aztec.toHtml(false))
         }
     }
 
@@ -89,11 +113,24 @@ fun EditorScreen(
                 .padding(paddingValues)
                 .imePadding()
         ) {
-            // 元数据信息栏（时间、地点、天气）
+            // 交互式元数据信息栏（可点击弹出位置、天气设置与一键插入）
             EditorMetadataHeader(
                 creationTime = uiState.creationTime,
                 location = uiState.location,
-                weather = uiState.weather
+                weather = uiState.weather,
+                onLocationClick = { showLocationSheet = true },
+                onWeatherClick = { showWeatherSheet = true },
+                onQuickInsertClick = {
+                    val locSummary = uiState.location?.displaySummary
+                    val weatherSummary = uiState.weather?.let { "%.0f°C ${it.conditionsDescription}".trim() }
+                    val combined = listOfNotNull(
+                        locSummary?.let { "📍 $it" },
+                        weatherSummary?.let { "☀ $it" }
+                    ).joinToString(" · ")
+                    if (combined.isNotEmpty()) {
+                        insertContentAtCursor(combined)
+                    }
+                }
             )
 
             HorizontalDivider(
@@ -197,5 +234,32 @@ fun EditorScreen(
                 )
             }
         }
+    }
+
+    // 位置管理 BottomSheet
+    if (showLocationSheet) {
+        LocationBottomSheet(
+            location = uiState.location,
+            onDismiss = { showLocationSheet = false },
+            onRefreshLocation = { viewModel.refreshLocationAndWeather(context) },
+            onUpdatePlaceName = { newName -> viewModel.updateLocationPlaceName(newName) },
+            onInsertIntoContent = { textToInsert ->
+                insertContentAtCursor(textToInsert)
+            },
+            onClearLocation = { viewModel.updateLocation(null) }
+        )
+    }
+
+    // 天气管理 BottomSheet
+    if (showWeatherSheet) {
+        WeatherBottomSheet(
+            weather = uiState.weather,
+            onDismiss = { showWeatherSheet = false },
+            onRefreshWeather = { viewModel.refreshLocationAndWeather(context) },
+            onUpdateWeather = { temp, desc -> viewModel.updateWeatherDetails(temp, desc) },
+            onInsertIntoContent = { textToInsert ->
+                insertContentAtCursor(textToInsert)
+            }
+        )
     }
 }

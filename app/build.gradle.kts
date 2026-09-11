@@ -68,5 +68,6 @@ dependencies {
     implementation("org.wordpress:aztec:v1.6.2")
     implementation("androidx.appcompat:appcompat:1.7.0")
 
+    testImplementation("junit:junit:4.13.2")
     debugImplementation(libs.androidx.ui.tooling)
 }

@@ -157,6 +157,9 @@ fun EditorMetadataHeader(
     creationTime: java.time.Instant,
     location: com.localone.journal.domain.model.EntryLocation?,
     weather: com.localone.journal.domain.model.EntryWeather?,
+    onLocationClick: () -> Unit = {},
+    onWeatherClick: () -> Unit = {},
+    onQuickInsertClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val dateFormatter = remember {
@@ -172,29 +175,90 @@ fun EditorMetadataHeader(
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = formattedDate,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        location?.let { loc ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
             Text(
-                text = "· ${loc.displaySummary}",
+                text = formattedDate,
                 fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // 可点击位置胶囊
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onLocationClick() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "📍 ", fontSize = 11.sp)
+                    Text(
+                        text = location?.displaySummary ?: "添加位置",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
+
+            // 可点击天气胶囊
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onWeatherClick() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (weather != null) "%.0f°C ${weather.conditionsDescription}".trim() else "添加天气",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
         }
 
-        weather?.let { w ->
-            Text(
-                text = "· ${w.temperatureCelsius}°C ${w.conditionsDescription}",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        // 快捷一键插入到正文按钮
+        Surface(
+            color = DayOneTeal.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { onQuickInsertClick() }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    tint = DayOneTeal,
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Text(
+                    text = "插入正文",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DayOneTeal
+                )
+            }
         }
     }
 }
