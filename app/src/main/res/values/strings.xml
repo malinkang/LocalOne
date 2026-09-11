@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">LocalOne</string>
+    <string name="timeline">时间线</string>
+    <string name="calendar">日历</string>
+    <string name="media">媒体库</string>
+    <string name="settings">设置</string>
+    <string name="on_this_day">那年今天</string>
+    <string name="new_entry">新建日记</string>
+    <string name="search_hint">搜索日记内容、标签、位置...</string>
+</resources>
