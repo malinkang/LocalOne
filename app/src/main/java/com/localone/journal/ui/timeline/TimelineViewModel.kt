@@ -17,6 +17,23 @@ class TimelineViewModel(
 
     private val today = LocalDate.now()
 
+    init {
+        viewModelScope.launch {
+            repository.getAllEntries().firstOrNull()?.firstOrNull()?.let { firstEntry ->
+                if (firstEntry.photoUris.isEmpty()) {
+                    repository.insertOrUpdateEntry(
+                        firstEntry.copy(
+                            photoUris = listOf(
+                                "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
+                                "https://images.unsplash.com/photo-1511497584788-87676104235f?w=800&auto=format&fit=crop&q=80"
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    }
+
     val uiState: StateFlow<TimelineUiState> = combine(
         repository.getAllEntries(),
         repository.getOnThisDayEntries(today.monthValue, today.dayOfMonth),
@@ -68,8 +85,11 @@ class TimelineViewModel(
                 weather = com.localone.journal.domain.model.EntryWeather(
                     temperatureCelsius = 22.5,
                     conditionsDescription = "晴朗",
-                    weatherCode = "sunny",
-                    moonPhase = 0.5
+                    weatherCode = "sunny"
+                ),
+                photoUris = listOf(
+                    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1511497584788-87676104235f?w=800&auto=format&fit=crop&q=80"
                 ),
                 isStarred = true
             )

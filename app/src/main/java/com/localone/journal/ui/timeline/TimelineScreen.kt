@@ -181,8 +181,10 @@ fun DayOneJournalCard(
     onToggleStar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val dateFormatter = DateTimeFormatter.ofPattern("M月d日 EEEE · HH:mm", Locale.CHINESE)
     val formattedTime = entry.localDateTime.format(dateFormatter)
+    val coverPhotoUri = entry.photoUris.firstOrNull()
 
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -192,13 +194,63 @@ fun DayOneJournalCard(
             .fillMaxWidth()
             .clickable { onCardClick() }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // 顶部时间戳与收藏星标
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // 封面大图：默认将第一张图片设置为封面
+            if (!coverPhotoUri.isNullOrBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(190.dp)
+                ) {
+                    coil.compose.AsyncImage(
+                        model = coil.request.ImageRequest.Builder(context)
+                            .data(coverPhotoUri)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "日记封面",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // 多图指示角标 (例如: 📷 3)
+                    if (entry.photoUris.size > 1) {
+                        Surface(
+                            color = Color.Black.copy(alpha = 0.65f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PhotoLibrary,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${entry.photoUris.size}",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                // 顶部时间戳与收藏星标
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 Text(
                     text = formattedTime,
                     fontSize = 12.sp,
@@ -289,6 +341,7 @@ fun DayOneJournalCard(
             }
         }
     }
+}
 }
 
 @Composable

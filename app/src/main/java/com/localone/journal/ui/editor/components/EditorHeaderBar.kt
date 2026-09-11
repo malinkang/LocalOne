@@ -224,7 +224,7 @@ fun EditorMetadataHeader(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (weather != null) "%.0f°C ${weather.conditionsDescription}".trim() else "添加天气",
+                        text = if (weather != null) "%.0f°C %s".format(weather.temperatureCelsius, weather.conditionsDescription).trim() else "添加天气",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
